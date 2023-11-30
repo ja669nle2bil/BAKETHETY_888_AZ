@@ -30,6 +30,11 @@ class CitiesSearch {
         //      step1.1
         //        throw new RuntimeException("Not implemented yet");
 
+        //     step 5
+        if("*".equals(inputText)) {
+            return AVAILABLE_CITIES;
+        }
+
         //  step 1.2
         if(inputText == null || inputText.length()<2){
             return Set.of();
@@ -43,7 +48,11 @@ class CitiesSearch {
 //                .collect(toSet());
 
 //        step 3
-                .filter(city -> city.toLowerCase().startsWith(inputText.toLowerCase()))
+//                .filter(city -> city.toLowerCase().startsWith(inputText.toLowerCase()))
+//                    .collect(toSet());
+
+        // step 5
+                .filter(city-> city.toLowerCase().contains(inputText.toLowerCase()))
                     .collect(toSet());
     }
 }
