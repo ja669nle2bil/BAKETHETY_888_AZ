@@ -30,6 +30,11 @@ class SimpleDiscountCalculator implements DiscountCalculator {
                 .map(this::toDiscount)
                 .orElseThrow(this::illegalAmountException);
     }
+//    @Override
+//    public Discount calculate(BigDecimal amount) {
+//        validateAmount(amount);
+//        return Optional.ofNullable(amount).map(this::toDiscount).orElseThrow(() -> new IllegalArgumentException("Invalid amount"));
+//    }
 
     private RuntimeException illegalAmountException() {
         return new RuntimeException("Amount value must be greater than or equal to zero");
