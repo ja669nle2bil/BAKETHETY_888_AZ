@@ -1,0 +1,157 @@
+Instalacja klient: => mongosh (pobierz z neta).
+Connection String URI: mongodb://user:password@localhost:27017/db?authSource=admin
+Połączenie: mongosh {uri}
+
+OPEROWANIE NA BAZIE:
+show dbs
+show collections
+use my_db
+
+OPERACJA CRUD:
+1.Create: 
+db.collection.insert({name: "Jakub"})
+2.Read: 
+db.collection.find({name: "Jakub"})
+3.Update: 
+db.collection.update({name: "Jakub"}, {name: "Kuba"}
+4.Delete: 
+db.collection.deleteOne({name: "Kuba"}
+
+PRZEŁĄCZ SIĘ NA NOWĄ BAZĘ DANYCH:
+use lekcja1
+
+W NOWEJ KOLEKCJI INFLACJA UMIEŚĆ PIERWSZY WPIS Z PONIŻSZYMI DANYMI DLA śREDNIOROCZNEJ INFLACJI W 2022ROKU:
+db.inflacja.insertOne({"_id": 2022, "value": 113.7})
+
+NASTĘPNIE KORZYSTAJĄC Z DANYCH NBP DODAJ DANE O INFLACJI W LATACH 15-21:
+db.inflacja.insertMany([
+	{"_id": 2015, "value": 99.1},
+	{"_id": 2016, "value": 99.4},
+	{"_id": 2017, "value": 102.0},
+	{"_id": 2018, "value": 101.6},
+	{"_id": 2019, "value": 102.3},
+	{"_id": 2020, "value": 103.4},
+	{"_id": 2021, "value": 105.1}
+])
+
+1.2.1[POBIERZ WSZYSTKIE ISTNIEJĄCE WPISY O INFLACJI.
+db.inflacja.find({})
+
+1.2.2ZNAJDŹ INFLACJĘ W 2020 ROKU;
+db.inflacja.find({_id: 2020})
+
+1.2.3ZNAJDŹ LATA, W KTÓRYCH INFLACJA NIE BYŁA ZGODNA Z CELEM POLITYKI PIENIĘŻNEJ NBP.
+db.inflacja.find({
+	$or: [
+		{"value": {$lt: 101.5}},
+		{"value": {$gt: 103.5}},
+	]
+})
+
+1.3.1ZMIEŃ WARTOŚĆ (PROGNOZOWANEJ) śREDNIOROCZNEJ INFLACJI NA ROK 2022 NA :'115.4'
+db.inflacja.updateOne(
+	{"_id": 2022},
+	{$set: {"value": 115.4}}
+)
+
+1.3.2ZMIEŃ FORMAT ZAPISU INFLACJI*
+db.inflacja.updateMany(
+	{},
+	[{$set: {"value": {$subtract: ["$value", 100]}}}]
+)
+
+1.4.1USUŃ WPIS DLA ROKU 2018:
+db.inflacja.deleteOne({_id: 2018})
+
+1.4.2DANE O INFLACJI NIE BĘDĄ NAM JUŻ POTRZEBNE. USUŃ KOLEKCJE
+db.inflacja.drop()
+
+
+WYSZUKIWANIE:
+1. Operatory logiczne, obiekty zagnieżdżone, tablice:
+db.collection.find({$or: ["a.b": "c", "d": ["c"]]})`
+
+2.Sortowanie i limitowanie wyników:
+db.collection.find({}).sort({a: 1}).limit(10)
+
+3. Zliczanie:
+db.collection.count({}) 
+||
+db.collection.countDocuments()
+||
+db.collection.countDocuments({})
+
+ZMIANA KOLEKCJI NA NETFLIXOWĄ FILMOWĄ:
+use sample_mflix
+
+2.1WYŚWIETL PIERWSZY DOKUMENT Z KOLEKCJI 'movies'
+use sample_mflix
+db.movies.find().limit(1)
+
+2.2ZNAJDŹ FILM O TYTULE 'THE GODFATHER'/
+db.movies.find({title: "The Godfather"})
+
+2.3ILE JEST FILMÓW, KTÓRE NA IMDb MAJĄ RATING >= 9.0:
+db.movies.countDocuments({"imdb.rating": {$gte: 9.0}})
+
+2.4ILE JEST POLSKOJĘZYCZNYCH FILMÓW KTÓRE MAJĄ > 15 NAGRÓD
+db.movies.count({"Languages": "Polish", "awards.wins": {$gt: 15}})
+
+2.5LISTA TYTUŁOW, W KTÓRYCH OBASDZIE BYŁ HENRY CAVILL POSORTOWANCH PO ROKU PREMIERY:
+db.movies.find({"cast": "Henry Cavill"}, {_id: 0, title: 1}).sort({year: -1})
+
+2.6FILMY KTÓRYCH REŻYSEREM BYŁ QUENTIN TARANTINO LUB CHRISTOPHER NOLAN, POSORTOWANYCH MALEJĄCO PO OCENIE IMDB. WYŚWIETL TYLKO TYTUŁ, REŻ. + OCENĘ.
+db.movies.find(
+	{$or: [{"directors": ["Quentin Tarantino"]}, {"directors": ["Christopher Nolan"]}]},
+	{_id: 0, title: 1, directors: 1, "imdb.rating": 1}
+).sort({"imdb.rating": -1})
+
+
+AGREGACJE:
+1. Czym są agregacje(pipeline, stage)?
+- proces przetwarzania dokumentów, składające się z 1, 1+ operacji. Wykonywane są operacje na dokumentach wejściowych,
+tj. filtrowanie, grupowanie i obliczanie wartości. 
+Agregacje mogą zwracać wyniki dla grup dokumentów: np. całkowitą, średnią, maks, i minimalną wartośc.
+- pipeline - operacje przechodzą jedna przez drugą .
+2. przykład wyszukania:::
+db.collection.aggregate([ { $match : { field: "value" } } ])
+db.movies.aggregat([ { $match: {field: "value" } } ])
+
+
+3.1 AGGREGATE" ZNAJDŹ FILM O TYTULE THE GODFATHER'
+db.movies.aggregate([
+	{$match: {title: "The Godfather"}}
+])
+
+3.2 POLICZ ILE ZNAJDUJE SIĘ FILMÓW, A ILE SERIALI W KOLEKCJI 'MOVIES':
+db.movies.aggregate([
+	{$group: {_id: "$type", count: {$sum: 1}}}
+])
+
+3.3 DO FILMU O TYTULE 'THE GREEN MILE' DOJOINUJ KOMENTARZE Z KOLEKCJI 'COMMENTS'"
+db.moveis.aggregate([
+	{$match: {title: "The Green Mile"}},
+	{$lookup: {from: "comments", localFiled: "_id", foreignField: "movie_id", as: "comments"}}
+])
+
+3.4 SKATEGORYZUJ FILMY PO LATACH PUBLIKACJI W BUCKETY, WYNIK ZAPISZ DO NOWEJ KOLEKCJI: 'movies_buckets`.*
+db.movies.aggregate([
+	{ $bucket: {groupBy: "$year", boundaries: [1900, 1950, 1970, 1990, 2000, 2010, 2020], default: "others" } },
+	{ $merge: { into: "movies_buckets"} }
+])
+
+
+INDEKSY:":
+db.collection.createIndex({field: 1}, {background: true})
+
+4.1 ZOBACZ, JAKIE INDEKSY ISTNIEJĄ W MOVIES;
+db.movies.getIndices();
+
+4.2 DODAJ INDEKS NA POLU TITLE:
+db.movies.createIndex({title: 1})
+
+4.3 DODAJ INDEKS NA POLACH TYPE I YEAR: INDEKS POWINIEN BUDOWAĆ SIĘ W TLE.
+db.movies.createIndex({type: 1, year: 1}, {background: true})
+
+4.4 USUŃ INDEKS NA POLU TITLE.
+db.movies.dropIndex("title_1")
